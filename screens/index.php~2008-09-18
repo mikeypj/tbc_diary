@@ -1,0 +1,174 @@
+<?php
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//	Name:		index.php
+//	Desc:		get todays events for presentation screens
+//  Client:		BCD
+//	Author:		Rob Curle
+//	Date:		5 December 2005
+//	Notes:
+//
+///////////////////////////////////////////////////////////////////////////////////////
+
+	include("startup.php");
+
+	$locations = get_locations();
+	$floors = get_locations_floors();
+	$db = new db_mysql;
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Today at the Building Centre</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="refresh" content="60">
+<link rel=stylesheet type='text/css' href='css/main.css' />
+</head>
+
+<body onLoad="show_clock();">
+
+
+
+<table align="center" width="668" border="0" cellspacing="10" cellpadding="0">
+<tr><td colspan="2" class="today_title" valign="middle"> <script type="text/javascript" language="javascript" src="js/liveclock_lite.js"></script><img src="media/trans.gif" width="20" height="1" border="0" /></td></tr>
+
+<?php
+	$path = "../".get_image_path();
+	
+	// Events //
+	//$db->query("SELECT hosted_by, hosted_other, time_from, time_to, event_title, location FROM events WHERE info_screen=1 AND event_date=CURDATE() AND (time_from>=CURTIME() OR time_to>=CURTIME()) ORDER BY time_from, event_title");	
+	$db->query("SELECT e.hosted_by, e.hosted_other, e.time_from, e.time_to, e.event_title, e.image_src, e.location, e.nla_suite, m.message FROM events AS e LEFT JOIN messages AS m ON e.id=m.event_id WHERE e.visible=1 AND e.info_screen=1 AND e.event_date=CURDATE() ORDER BY e.time_from, e.event_title");	// display all of days events
+	if ($db->num_rows() > 0) {
+?>
+<tr><td colspan="2" class="events_title"> </td></tr>
+<?php
+		while ($db->next_record()) {
+			$has_thumb = $logo = false;
+			$colspan = 3;
+			
+			if (is_file($path.$db->f("image_src"))) {
+				$has_thumb = true;
+				$colspan--;
+			}
+			if ($db->f("hosted_by") < OTHER_IDX) {
+				$logo = true;
+				$colspan--;
+			}
+			
+			switch ($db->f("hosted_by")) {
+				default: $class="green"; break;
+				case 1: $class="blue"; $logo_src="bc.gif"; break;
+				case 2: $class="blue"; $logo_src="bct.gif"; break;
+				case 3: $class="purple"; $logo_src="nla.gif"; break;
+			}
+			
+			echo "<tr><td colspan=\"2\"><table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"10\"><tr><td class=\"{$class}\"".($colspan>1 ? " colspan=\"{$colspan}\"":"").">";
+			
+			echo "<span class=\"title_txt\">" . $db->f("event_title") . "</span><br />\n";
+			$hosted_txt = ($db->f("hosted_by")==OTHER_IDX ? $db->f("hosted_other"):$hosted_by[$db->f("hosted_by")]);
+			if (!empty($hosted_txt) && $hosted_txt!=$db->f("event_title")) echo "{$hosted_txt}<br />\n";
+			echo "<span class=\"grey\">" . format_time($db->f("time_from"))." - ".format_time($db->f("time_to")).",  " . $locations[$db->f("location")];
+			if ($db->f("location") == NLA_SEMINAR) {
+				foreach ($nla_suite as $bit => $room) {
+					if (query_bit($db->f("nla_suite"), $bit)) {
+						echo " {$room}";
+					}
+				}
+			}
+			echo " (".$floors[$db->f("location")].")</span>";
+			
+			if ($db->f("message")) echo "<br /><span class=\"grey\">".nl2br($db->f("message"))."</span>";
+			echo "</td>";
+			
+			if ($has_thumb) {
+				echo "<td valign=\"middle\" width=\"".IMG_WIDTH."\"><img src=\"{$path}".$db->f("image_src")."\" width=\"".IMG_WIDTH."\" height=\"".IMG_HEIGHT."\" border=\"0\" /></td>";
+			}
+			if ($logo) {
+				echo "<td valign=\"middle\" width=\"43\"><img src=\"media/{$logo_src}\" border=\"0\" /></td>";
+			}
+			echo "</tr></table></td></tr>\n";
+		}
+	}	
+
+	// Exhibitions //
+	$db->query("SELECT e.hosted_by, e.hosted_other, e.exhib_title, e.location, e.nla_suite, e.date_from, e.date_to, e.image_src, m.message FROM exhibitions AS e LEFT JOIN messages AS m ON e.id=m.exhib_id WHERE e.visible=1 AND e.info_screen=1 AND ((CURDATE() BETWEEN e.date_from AND e.date_to) OR (e.date_from = CURDATE())) ORDER BY e.date_from, e.exhib_title");
+	if ($db->num_rows() > 0) {
+?>
+<tr><td colspan="2" class="exhibitions_title"> </td></tr>
+<?php
+		while ($db->next_record()) {
+			$has_thumb = $logo = false;
+			$colspan = 3;
+			
+			if (is_file($path.$db->f("image_src"))) {
+				$has_thumb = true;
+				$colspan--;
+			}
+			if ($db->f("hosted_by") < OTHER_IDX) {
+				$logo = true;
+				$colspan--;
+			}
+			
+			switch ($db->f("hosted_by")) {
+				default: $class="green"; break;
+				case 1: $class="blue"; $logo_src="bc.gif"; break;
+				case 2: $class="blue"; $logo_src="bct.gif"; break;
+				case 3: $class="purple"; $logo_src="nla.gif"; break;
+			}
+			
+			echo "<tr><td colspan=\"2\"><table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"10\"><tr><td class=\"{$class}\"".($colspan>1 ? " colspan=\"{$colspan}\"":"").">";
+			
+			echo "<span class=\"title_txt\">" . $db->f("exhib_title") . "</span><br />\n";
+			$hosted_txt = ($db->f("hosted_by")==OTHER_IDX ? $db->f("hosted_other"):$hosted_by[$db->f("hosted_by")]);
+			if (!empty($hosted_txt) && $hosted_txt!=$db->f("exhib_title")) echo "{$hosted_txt}<br />\n";
+			echo "<span class=\"grey\">".format_date_title($db->f("date_from"), $db->f("date_to")).", ". $locations[$db->f("location")];
+			if ($db->f("location") == NLA_SEMINAR) {
+				foreach ($nla_suite as $bit => $room) {
+					if (query_bit($db->f("nla_suite"), $bit)) {
+						echo " {$room}";
+					}
+				}
+			}
+			echo " (".$floors[$db->f("location")].")</span>";
+			
+			if ($db->f("message")) echo "<br /><span class=\"grey\">".nl2br($db->f("message"))."</span>";
+			echo "</td>";
+			
+			if ($has_thumb) {
+				echo "<td valign=\"top\" width=\"".IMG_WIDTH."\"><img src=\"{$path}".$db->f("image_src")."\" width=\"".IMG_WIDTH."\" height=\"".IMG_HEIGHT."\" border=\"0\" /></td>";
+			}
+			if ($logo) {
+				echo "<td valign=\"middle\" width=\"43\"><img src=\"media/{$logo_src}\" border=\"0\" /></td>";
+			}
+			
+			echo "</tr></table></td></tr>\n";
+		}
+	}
+
+	// Messages //	
+	$db->query("SELECT message, image_src FROM messages WHERE active=1 AND exhib_id is null AND event_id is null AND ((CURDATE() BETWEEN date_from AND date_to AND time_from is null AND time_to is null) OR (CURDATE() BETWEEN date_from AND date_to AND CURTIME() BETWEEN time_from AND time_to)) ORDER BY msg_order DESC LIMIT 4");
+	if ($db->num_rows() > 0) {
+		echo "<tr><td colspan=\"2\" class=\"notices_title\"> </td></tr>\n<tr>";
+
+		for ($i=0; $i<4; $i++) {
+			if ($i == 2) echo "</tr>\n<tr>";
+			
+			echo "<td valign=\"top\" width=\"50%\">";
+			if ($db->next_record()) {
+				if (is_file($path.$db->f("image_src"))) {
+					echo "<img src=\"".$path.$db->f("image_src")."\" width=\"".BANNER_WIDTH."\" height=\"".BANNER_HEIGHT."\" border=\"0\" />";
+				}
+				if ($db->f("message")) {
+					echo "<p class=\"message_txt\">".nl2br($db->f("message"))."</p>";
+				}
+			}
+			echo "</td>";
+		}
+		
+		echo "</tr>\n";
+	}
+?>
+</table>
+
+</body>
+</html>

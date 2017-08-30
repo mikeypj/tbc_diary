@@ -1,0 +1,75 @@
+body, p, td, th {
+  font-family: Arial, Helvetica, sans-serif;
+	font-size: 18px;
+	color: #484848;
+	background-color: #FFFFFF;
+}
+
+body {
+	background-image: url(../media/bg.gif);
+	background-color: #FFFFFF;
+	margin:40px 20px;
+}
+
+td.today_title {
+  font-family: Arial, Helvetica, sans-serif;
+	background:transparent url(../media/bclogo.gif) 0px 0px no-repeat;
+	color: #D5D5D5;
+	font-size: 30px;
+	font-weight:bold;
+	letter-spacing: 1px;
+	width: 668px;
+	height:100px;
+	text-align: right;
+}
+
+#LiveClockIE {
+  background:white;
+  padding:3px 10px;
+  color:#8A8C8F;
+}
+
+td.events_title , td.exhibitions_title , td.notices_title {
+  font-family: Arial, Helvetica, sans-serif;
+	background:#8AC75A url(../media/todaysevents.gif) 10px center no-repeat;
+	width: 668px;
+	height: 35px;
+}
+td.exhibitions_title {
+	background-image:url(../media/currentexhibitions.gif);
+}
+td.notices_title {
+	background-image: url(../media/messages.gif);
+}
+
+.title_txt {
+  font-family: Arial, Helvetica, sans-serif;
+	font-size: 19px;
+	font-weight: bold;
+	color: #333;
+}
+
+td.notice {
+  font-family: Arial, Helvetica, sans-serif;
+	color: #339900;
+	font-size: 16px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	line-height: 18px;
+}
+
+.grey , .org {
+	color: #484848;
+}
+
+.loc {
+  font-weight:bold;
+}
+
+img {
+	border: 0px;
+}
+
+p.message_txt {
+	padding: 10px;
+}

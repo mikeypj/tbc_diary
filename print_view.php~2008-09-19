@@ -1,0 +1,284 @@
+<?php
+// +------------------------------------------------------------+
+// | Copyright (c) 2008 Mark Yasuda @ Manha                     |
+// +------------------------------------------------------------+
+// | THIS CODE IS PROTECTED BY COPYRIGHT LAW.                   |
+// |                                                            |
+// | Unauthorised re-use of this code is a breach of copyright. |
+// | To request the use of the code herein, please contact:     |
+// |                                           ---------------- |
+// |                                            info@manha.com  |
+// +------------------------------------------------------------+
+// | Author:  Mark Yasuda <info@manha.com>                      |
+// +------------------------------------------------------------+
+// | Version: 1.0                                               |
+// | Created: 17/09/2008                                        |
+// +------------------------------------------------------------+
+// | Version History                                            |
+// |                                                            |
+// |  1.0 - Original print view for events and exhibitions.     |
+// +------------------------------------------------------------+
+// | Known Bugs And Issues                                      |
+// |                                                            |
+// |  None.                                                     |
+// +------------------------------------------------------------+
+
+
+include("includes/startup.php");
+
+$db = new db_mysql ;
+$dbcontact = new db_mysql ;
+
+if ( strlen( $_REQUEST['type'] ) > 0 ) {
+
+  $type = $_REQUEST['type'] ;
+  if ( !empty( $_REQUEST['id'] ) && is_numeric( $_REQUEST['id'] ) ) {
+
+    $id = $_REQUEST['id'] ;
+  	$db->query( "SELECT * FROM " . $type . " WHERE id = " . $id ) ;
+  	$db->next_record();
+  	if ( $db->num_rows() == 0 ) {
+
+			redirect( $type . '.php?id=' . $id ) ;
+  	}
+  }
+}
+
+$locations = get_locations();
+
+include("includes/print_header.php");
+
+if ( $type == 'events' ) {
+
+  ?><h1><?= $db->f("event_title") ;?></h1>
+  <div id="essentials">
+  <?php
+
+  if ( $db->f("status") > 0 ) {
+
+    ?><div id="status"><?php
+  	switch ($db->f("status")) {
+
+  		case 1:
+  		  echo 'Tentative' ;
+  		  break;
+  		case 3:
+  		  echo 'Cancelled' ;
+  		  break;
+  	}
+  	?></div><?php
+  }
+
+  ?>
+  <table class="table_data">
+    <tr>
+      <td class="grey">Event id:</td>
+      <td class="data"><?= $db->f("id") ;?></td>
+    </tr>
+    <tr>
+      <td class="grey">Organised by:</td>
+      <td class="data"><?= ( $db->f("hosted_by") == OTHER_IDX ) ? $db->f("hosted_other") : $hosted_by[$db->f("hosted_by")] ;?></td>
+    </tr>
+    <tr>
+      <td class="grey">Location: </td>
+      <td class="data"><?= $locations[$db->f("location")] ;?><?php
+
+  if ( $db->f("location") == NLA_SEMINAR ) {
+
+  	foreach( $nla_suite as $bit => $room ) {
+
+  		if ( query_bit( $db->f("nla_suite") , $bit ) ) {
+
+  			echo " " . $room ;
+  		}
+  	}
+  }
+
+      ?></td>
+    </tr>
+    <tr>
+      <td class="grey">Date: </td>
+      <td class="data"><?= format_longdate( $db->f("event_date") ) ;?></td>
+    </tr>
+    <tr>
+      <td class="grey">Time: </td>
+      <td class="data"><?= format_time($db->f("time_from")) . " - " . format_time($db->f("time_to")) ;?></td>
+    </tr>
+    <?php
+
+  if ($db->f("period_from")!= null && $db->f("period_to")!= null) {
+
+    ?><tr>
+      <td class="grey">Period of occupation: </td>
+      <td class="data"><?= format_time($db->f("period_from")) . " - " . format_time($db->f("period_to")) ;?></td>
+    </tr>
+    <?php
+  }
+
+  if ($db->f("num_people") > 0) {
+
+    ?><tr>
+      <td class="grey">Number of people: </td>
+      <td class="data"><?= $db->f("num_people") ;?></td>
+    </tr>
+    <?php
+  }
+  ?>
+  </table>
+  </div>
+  <?php
+
+  // general notes //
+  if ( $db->f('notes') != '' ) {
+
+    ?><div id="notes">
+  	<hr />
+  	<h2>General Notes</h2>
+  	<?= nl2br( $db->f('notes') ) ;?>
+    </div><?php
+  }
+
+  // equipment details //
+  if ( $db->f('equipment') != '' ) {
+
+    ?><div id="equipment">
+  	<hr />
+  	<h2>Equipment</h2>
+  	<?= nl2br( $db->f('equipment') ) ;?>
+    </div><?php
+  }
+
+  // catering details //
+  if ( $db->f('catering') != '' ) {
+
+    ?><div id="catering">
+  	<hr />
+  	<h2>Catering</h2>
+  	<?= nl2br( $db->f('catering') ) ;?>
+    </div><?php
+  }
+
+  // security details //
+  if ( $db->f('security') != '' ) {
+
+    ?><div id="security">
+  	<hr />
+  	<h2>Security</h2>
+  	<?= nl2br( $db->f('security') ) ;?>
+    </div><?php
+  }
+
+  // contact details //
+  $dbcontact->query( 'SELECT * FROM contacts WHERE event_id = ' . $id ) ;
+  if ( $dbcontact->num_rows() > 0 ) {
+
+  	$dbcontact->next_record();
+    ?><div id="contact">
+  	<hr />
+    <h2>Contact details</h2>
+    <table class="table_data">
+    <?php
+
+  	if ($dbcontact->f("contact_name")) {
+
+  	  ?><tr>
+        <td class="grey">Name: </td>
+        <td class="data"><?= $dbcontact->f("contact_name") ;?></td>
+      </tr><?php
+    }
+  	if ($dbcontact->f("tel")) {
+
+  	  ?><tr>
+        <td class="grey">Tel: </td>
+        <td class="data"><?= $dbcontact->f("tel") ;?></td>
+      </tr><?php
+    }
+  	if ($dbcontact->f("fax")) {
+
+  	  ?><tr>
+        <td class="grey">Fax: </td>
+        <td class="data"><?= $dbcontact->f("fax") ;?></td>
+      </tr><?php
+    }
+  	if ($dbcontact->f("email")) {
+
+  	  ?><tr>
+        <td class="grey">Email: </td>
+        <td class="data"><?= $dbcontact->f("email") ;?></td>
+      </tr><?php
+    }
+  	if ($dbcontact->f("company")) {
+
+  	  ?><tr>
+        <td class="grey">Company name: </td>
+        <td class="data"><?= $dbcontact->f("company") ;?></td>
+      </tr><?php
+    }
+  	if ($dbcontact->f("address_1")) {
+
+  	  ?><tr>
+        <td class="grey">Address: </td>
+        <td class="data"><?= $dbcontact->f("address_1")." ".$dbcontact->f("address_2") ;?></td>
+      </tr><?php
+    }
+  	?>
+    </table>
+    </div><?php
+  }
+
+//or show exhibition
+} else {
+
+  ?><h1><?= $db->f("exhib_title") ;?></h1>
+  <div id="essentials">
+  <table class="table_data">
+    <tr>
+      <td class="grey">Exhibition id:</td>
+      <td class="data"><?= $db->f("id") ;?></td>
+    </tr>
+    <tr>
+      <td class="grey">Organised by:</td>
+      <td class="data"><?= ( $db->f("hosted_by") == OTHER_IDX ) ? $db->f("hosted_other") : $hosted_by[$db->f("hosted_by")] ;?></td>
+    </tr>
+    <tr>
+      <td class="grey">Location: </td>
+      <td class="data"><?= $locations[$db->f("location")] ;?><?php
+
+  if ( $db->f("location") == NLA_SEMINAR ) {
+
+  	foreach( $nla_suite as $bit => $room ) {
+
+  		if ( query_bit( $db->f("nla_suite") , $bit ) ) {
+
+  			echo " " . $room ;
+  		}
+  	}
+  }
+
+      ?></td>
+    </tr>
+    <tr>
+      <td class="grey">Date: </td>
+      <td class="data"><?= format_longdate( $db->f("date_from") ) . " - " . format_longdate( $db->f("date_to") ) ;?></td>
+    </tr>
+  </table>
+  </div>
+  <?php
+
+  // general notes //
+  if ( $db->f('notes') != '' ) {
+
+    ?><div id="notes">
+  	<hr />
+  	<h2>General Notes</h2>
+  	<?= nl2br( $db->f('notes') ) ;?>
+    </div><?php
+  }
+}
+
+?>
+<hr />
+<table border="0" cellpadding="0" cellspacing="1">
+<tr><td>Event created:&nbsp;</td><td><?php echo last_modified($db->f("created_date"), $db->f("created_by"));?></td></tr>
+<tr><td>Event updated:&nbsp;</td><td><?php echo last_modified($db->f("modified_date"), $db->f("modified_by"));?></td></tr>
+</table>
